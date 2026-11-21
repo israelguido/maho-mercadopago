@@ -26,3 +26,8 @@
 "Mercado Pago payment ID","ID do pagamento no Mercado Pago"
 "Status","Status"
 "Status detail","Detalhe do status"
+"Street number line","Linha do número"
+"Street complement line","Linha do complemento"
+"Street neighborhood line","Linha do bairro"
+"None","Nenhuma"
+"Line %s","Linha %s"

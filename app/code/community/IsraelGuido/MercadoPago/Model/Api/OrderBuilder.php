@@ -10,16 +10,7 @@ class IsraelGuido_MercadoPago_Model_Api_OrderBuilder
     public function build(Mage_Sales_Model_Order $order, array $paymentMethod): array
     {
         $address = $order->getBillingAddress();
-        $street = is_object($address) ? (array) $address->getStreet() : [];
-        $streetName = (string) ($street[0] ?? '');
-        $rawNumber = (string) ($street[1] ?? '');
-        $neighborhood = (string) ($street[2] ?? '');
-        $streetNumber = 'S/N';
-        if (preg_match('/^(\d{1,10})[A-Za-z]?$/', $rawNumber, $match)) {
-            $streetNumber = $match[1];
-        } elseif ($neighborhood === '' && $rawNumber !== '') {
-            $neighborhood = $rawNumber;
-        }
+        $payerAddress = $this->payerAddress(is_object($address) ? $address : null);
 
         return [
             'type' => 'online',
@@ -31,20 +22,54 @@ class IsraelGuido_MercadoPago_Model_Api_OrderBuilder
                 'first_name' => $this->firstName($order, is_object($address) ? $address : null),
                 'last_name' => $this->lastName($order, is_object($address) ? $address : null),
                 'identification' => $this->identification($order),
-                'address' => [
-                    'zip_code' => preg_replace('/\D+/', '', (string) (is_object($address) ? $address->getPostcode() : '')),
-                    'street_name' => $streetName,
-                    'street_number' => $streetNumber,
-                    'neighborhood' => $neighborhood,
-                    'city' => (string) (is_object($address) ? $address->getCity() : ''),
-                    'state' => strtoupper((string) (is_object($address) ? $address->getRegionCode() : '')),
-                ],
+                'address' => $payerAddress,
             ],
             'transactions' => ['payments' => [[
                 'amount' => Mage::helper('israelguido_mercadopago')->formatAmount((float) $order->getGrandTotal()),
                 'payment_method' => $paymentMethod,
             ]]],
         ];
+    }
+
+    /**
+     * @return array{zip_code: string, street_name: string, street_number: string, neighborhood: string, city: string, state: string, complement?: string}
+     */
+    private function payerAddress(?Mage_Sales_Model_Order_Address $address): array
+    {
+        $street = $address ? (array) $address->getStreet() : [];
+        $helper = Mage::helper('israelguido_mercadopago');
+        $rawNumber = $this->streetLine($street, (int) ($helper->getConfig('street_number_line') ?? 2));
+        $neighborhood = $this->streetLine($street, (int) ($helper->getConfig('street_neighborhood_line') ?? 3));
+        $complement = $this->streetLine($street, (int) ($helper->getConfig('street_complement_line') ?? 0));
+        $streetNumber = 'S/N';
+        if (preg_match('/^(\d{1,10})[A-Za-z]?$/', $rawNumber, $match)) {
+            $streetNumber = $match[1];
+        } elseif ($neighborhood === '' && $rawNumber !== '') {
+            $neighborhood = $rawNumber;
+        }
+
+        $payload = [
+            'zip_code' => preg_replace('/\D+/', '', (string) ($address ? $address->getPostcode() : '')),
+            'street_name' => $this->streetLine($street, 1),
+            'street_number' => $streetNumber,
+            'neighborhood' => $neighborhood,
+            'city' => (string) ($address ? $address->getCity() : ''),
+            'state' => strtoupper((string) ($address ? $address->getRegionCode() : '')),
+        ];
+        if ($complement !== '') {
+            $payload['complement'] = $complement;
+        }
+
+        return $payload;
+    }
+
+    private function streetLine(array $street, int $line): string
+    {
+        if ($line < 1) {
+            return '';
+        }
+
+        return trim((string) ($street[$line - 1] ?? ''));
     }
 
     /**

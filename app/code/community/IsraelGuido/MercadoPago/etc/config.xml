@@ -61,6 +61,9 @@
         <payment>
             <israelguido_mercadopago>
                 <debug>0</debug>
+                <street_number_line>2</street_number_line>
+                <street_complement_line>0</street_complement_line>
+                <street_neighborhood_line>3</street_neighborhood_line>
             </israelguido_mercadopago>
             <israelguido_mercadopago_pix>
                 <active>0</active>

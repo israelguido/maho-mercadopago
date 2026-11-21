@@ -15,7 +15,7 @@ Se o pacote for instalado por repositório `path` durante o desenvolvimento, rod
 
 ## Configuração
 
-No admin, acesse **Sistema > Configuração > Formas de pagamento**. Preencha as credenciais no grupo **Mercado Pago** e ative individualmente Pix, boleto e cartão de crédito.
+No admin, acesse **Sistema > Configuração > Formas de pagamento**. Preencha as credenciais no grupo **Mercado Pago** e ative individualmente Pix, boleto e cartão de crédito. A rua é sempre a linha 1; mapeie número, complemento e bairro nas linhas 1–4 (ou Nenhuma). O complemento só é enviado em `payer.address` da Orders API quando a linha estiver configurada.
 
 Configure no Mercado Pago a seguinte URL de webhook:
 

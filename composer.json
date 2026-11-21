@@ -1,0 +1,15 @@
+{
+    "name": "israelguido/maho-mercadopago",
+    "description": "Integração Mercado Pago Checkout Transparente para Maho Commerce",
+    "type": "maho-module",
+    "license": "OSL-3.0",
+    "authors": [
+        {
+            "name": "Israel Guido"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "mahocommerce/maho": "*"
+    }
+}

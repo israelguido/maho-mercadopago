@@ -1,0 +1,73 @@
+<?php
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ *
+ * @var IsraelGuido_MercadoPago_Block_Info $this
+ */
+$_qrSrc = $this->getQrCodeImageSrc();
+$_qrCode = $this->getAdditional('mp_qr_code');
+$_ticketUrl = $this->getAdditional('mp_ticket_url');
+$_digitableLine = $this->getAdditional('mp_digitable_line');
+?>
+<p class="subtitle"><?= $this->escapeHtml($this->getMethod()->getTitle()) ?></p>
+
+<?php if ($this->isPix() && ($_qrSrc !== '' || $_qrCode !== '')): ?>
+    <div class="israelguido-mercadopago-pix">
+        <p><?= $this->__('Scan the Pix QR code with your bank app.') ?></p>
+        <?php if ($_qrSrc !== ''): ?>
+            <p>
+                <img src="<?= $this->escapeHtml($_qrSrc) ?>"
+                     alt="<?= $this->quoteEscape($this->__('Pay with Pix')) ?>"
+                     width="220" height="220">
+            </p>
+        <?php endif ?>
+        <?php if ($_qrCode !== ''): ?>
+            <p>
+                <label><?= $this->__('Pix copy-and-paste code') ?></label>
+                <textarea readonly="readonly" rows="3" cols="40"><?= $this->escapeHtml($_qrCode) ?></textarea>
+                <button type="button"
+                        class="button"
+                        data-mp-copy="<?= $this->escapeHtml($_qrCode) ?>"
+                        data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
+                    <?= $this->__('Copy Pix code') ?>
+                </button>
+            </p>
+        <?php endif ?>
+    </div>
+<?php endif ?>
+
+<?php if ($this->isBoleto() && ($_ticketUrl !== '' || $_digitableLine !== '')): ?>
+    <div class="israelguido-mercadopago-boleto">
+        <?php if ($_ticketUrl !== ''): ?>
+            <p>
+                <a href="<?= $this->escapeUrl($_ticketUrl) ?>" target="_blank" rel="noopener noreferrer">
+                    <?= $this->__('Open boleto') ?>
+                </a>
+            </p>
+        <?php endif ?>
+        <?php if ($_digitableLine !== ''): ?>
+            <p>
+                <label><?= $this->__('Boleto digitable line') ?></label>
+                <input type="text" readonly="readonly" value="<?= $this->escapeHtml($_digitableLine) ?>">
+                <button type="button"
+                        class="button"
+                        data-mp-copy="<?= $this->escapeHtml($_digitableLine) ?>"
+                        data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
+                    <?= $this->__('Copy boleto line') ?>
+                </button>
+            </p>
+        <?php endif ?>
+    </div>
+<?php endif ?>
+
+<?php if ($_specificInfo = $this->getSpecificInformation()): ?>
+    <dl class="payment-info">
+        <?php foreach ($_specificInfo as $_label => $_value): ?>
+            <dt><?= $this->escapeHtml($_label) ?></dt>
+            <dd><?= nl2br(implode("\n", $this->getValueAsArray($_value, true))) ?></dd>
+        <?php endforeach ?>
+    </dl>
+<?php endif ?>
+
+<?= $this->getChildHtml() ?>

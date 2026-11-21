@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ */
+-->
+<config>
+    <modules>
+        <IsraelGuido_MercadoPago>
+            <version>0.1.0</version>
+        </IsraelGuido_MercadoPago>
+    </modules>
+    <global>
+        <models>
+            <israelguido_mercadopago>
+                <class>IsraelGuido_MercadoPago_Model</class>
+            </israelguido_mercadopago>
+        </models>
+        <helpers>
+            <israelguido_mercadopago>
+                <class>IsraelGuido_MercadoPago_Helper</class>
+            </israelguido_mercadopago>
+        </helpers>
+        <blocks>
+            <israelguido_mercadopago>
+                <class>IsraelGuido_MercadoPago_Block</class>
+            </israelguido_mercadopago>
+        </blocks>
+    </global>
+    <frontend>
+        <layout>
+            <updates>
+                <israelguido_mercadopago>
+                    <file>israelguido/mercadopago.xml</file>
+                </israelguido_mercadopago>
+            </updates>
+        </layout>
+        <translate>
+            <modules>
+                <IsraelGuido_MercadoPago>
+                    <files>
+                        <default>IsraelGuido_MercadoPago.csv</default>
+                    </files>
+                </IsraelGuido_MercadoPago>
+            </modules>
+        </translate>
+    </frontend>
+    <adminhtml>
+        <translate>
+            <modules>
+                <IsraelGuido_MercadoPago>
+                    <files>
+                        <default>IsraelGuido_MercadoPago.csv</default>
+                    </files>
+                </IsraelGuido_MercadoPago>
+            </modules>
+        </translate>
+    </adminhtml>
+    <default>
+        <payment>
+            <israelguido_mercadopago>
+                <debug>0</debug>
+            </israelguido_mercadopago>
+            <israelguido_mercadopago_pix>
+                <active>0</active>
+                <model>israelguido_mercadopago/method_pix</model>
+                <title>Pix</title>
+                <payment_action>authorize</payment_action>
+                <order_status>pending_payment</order_status>
+                <sort_order>10</sort_order>
+            </israelguido_mercadopago_pix>
+            <israelguido_mercadopago_boleto>
+                <active>0</active>
+                <model>israelguido_mercadopago/method_boleto</model>
+                <title>Boleto</title>
+                <payment_action>authorize</payment_action>
+                <order_status>pending_payment</order_status>
+                <sort_order>20</sort_order>
+            </israelguido_mercadopago_boleto>
+            <israelguido_mercadopago_cc>
+                <active>0</active>
+                <model>israelguido_mercadopago/method_cc</model>
+                <title>Cartão de crédito</title>
+                <payment_action>authorize_capture</payment_action>
+                <sort_order>30</sort_order>
+                <max_installments>12</max_installments>
+            </israelguido_mercadopago_cc>
+        </payment>
+    </default>
+</config>

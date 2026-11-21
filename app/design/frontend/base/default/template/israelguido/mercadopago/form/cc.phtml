@@ -1,0 +1,129 @@
+<?php
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ *
+ * @var IsraelGuido_MercadoPago_Block_Form_Cc $this
+ */
+$_code = $this->getMethodCode();
+$_taxvat = $this->getCustomerTaxvat();
+$_docType = $this->getDocumentType();
+$_publicKey = $this->getPublicKey();
+?>
+<style>
+    .israelguido-mp-secure {
+        position: relative;
+        min-height: 48px;
+        border: 1px solid #ccc;
+        background: #fff;
+    }
+    .israelguido-mp-secure iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        pointer-events: auto;
+    }
+    .israelguido-mp-error {
+        color: #c00;
+        margin: 0.5em 0;
+    }
+</style>
+<ul class="form-list israelguido-mercadopago-form"
+    id="payment_form_<?= $this->escapeHtml($_code) ?>"
+    style="display:none;"
+    data-mp-public-key="<?= $this->escapeHtml($_publicKey) ?>"
+    data-mp-amount="<?= $this->escapeHtml($this->getFormattedAmount()) ?>"
+    data-mp-max-installments="<?= (int) $this->getMaxInstallments() ?>"
+    data-mp-issuer-placeholder="<?= $this->quoteEscape($this->__('Issuing bank')) ?>"
+    data-mp-installments-placeholder="<?= $this->quoteEscape($this->__('Select installments')) ?>"
+    data-mp-placeholder-number="<?= $this->quoteEscape($this->__('Credit Card Number')) ?>"
+    data-mp-placeholder-exp="<?= $this->quoteEscape($this->__('MM/YY')) ?>"
+    data-mp-placeholder-cvv="<?= $this->quoteEscape($this->__('Card Verification Number')) ?>"
+    data-mp-missing-key="<?= $this->quoteEscape($this->__('Public key is not configured.')) ?>"
+    data-mp-fields-error="<?= $this->quoteEscape($this->__('Mercado Pago could not load secure fields.')) ?>"
+    data-mp-required-error="<?= $this->quoteEscape($this->__('Fill in the cardholder name and document.')) ?>"
+    data-mp-token-error="<?= $this->quoteEscape($this->__('The card could not be tokenized. Check the data and try again.')) ?>">
+    <li data-mp-error class="israelguido-mp-error" role="alert" hidden></li>
+    <?php if ($_publicKey === ''): ?>
+        <li class="israelguido-mp-error"><?= $this->__('Public key is not configured.') ?></li>
+    <?php endif ?>
+    <li>
+        <div class="checkout-field" data-mp-field="cardNumber" role="group" aria-labelledby="<?= $this->escapeHtml($_code) ?>_card_number_label">
+            <label id="<?= $this->escapeHtml($_code) ?>_card_number_label" class="required"><?= $this->__('Credit Card Number') ?></label>
+            <div id="<?= $this->escapeHtml($_code) ?>_card_number"
+                 data-mp-secure-field="cardNumber"
+                 class="israelguido-mp-secure"
+                 aria-labelledby="<?= $this->escapeHtml($_code) ?>_card_number_label"></div>
+        </div>
+    </li>
+    <li>
+        <div class="checkout-field" data-mp-field="expirationDate" role="group" aria-labelledby="<?= $this->escapeHtml($_code) ?>_exp_label">
+            <label id="<?= $this->escapeHtml($_code) ?>_exp_label" class="required"><?= $this->__('Expiration Date') ?></label>
+            <div id="<?= $this->escapeHtml($_code) ?>_expiration_date"
+                 data-mp-secure-field="expirationDate"
+                 class="israelguido-mp-secure"
+                 aria-labelledby="<?= $this->escapeHtml($_code) ?>_exp_label"></div>
+        </div>
+    </li>
+    <li>
+        <div class="checkout-field" data-mp-field="securityCode" role="group" aria-labelledby="<?= $this->escapeHtml($_code) ?>_cvv_label">
+            <label id="<?= $this->escapeHtml($_code) ?>_cvv_label" class="required"><?= $this->__('Card Verification Number') ?></label>
+            <div id="<?= $this->escapeHtml($_code) ?>_security_code"
+                 data-mp-secure-field="securityCode"
+                 class="israelguido-mp-secure"
+                 aria-labelledby="<?= $this->escapeHtml($_code) ?>_cvv_label"></div>
+        </div>
+    </li>
+    <li>
+        <label for="<?= $this->escapeHtml($_code) ?>_cardholder" class="required"><?= $this->__('Name on Card') ?></label>
+        <div class="input-box">
+            <input type="text"
+                   id="<?= $this->escapeHtml($_code) ?>_cardholder"
+                   data-mp-field="cardholderName"
+                   title="<?= $this->quoteEscape($this->__('Name on Card')) ?>"
+                   class="input-text required-entry"
+                   autocomplete="cc-name">
+        </div>
+    </li>
+    <li>
+        <label for="<?= $this->escapeHtml($_code) ?>_doc_number" class="required"><?= $this->__('CPF/CNPJ') ?></label>
+        <div class="input-box">
+            <input type="text"
+                   id="<?= $this->escapeHtml($_code) ?>_doc_number"
+                   name="payment[mp_doc_number]"
+                   value="<?= $this->escapeHtml($_taxvat) ?>"
+                   title="<?= $this->quoteEscape($this->__('CPF/CNPJ')) ?>"
+                   class="input-text required-entry"
+                   autocomplete="off">
+            <select id="<?= $this->escapeHtml($_code) ?>_doc_type"
+                    name="payment[mp_doc_type]"
+                    hidden
+                    aria-hidden="true"
+                    tabindex="-1">
+                <option value="CPF"<?= $_docType === 'CPF' ? ' selected="selected"' : '' ?>>CPF</option>
+                <option value="CNPJ"<?= $_docType === 'CNPJ' ? ' selected="selected"' : '' ?>>CNPJ</option>
+            </select>
+        </div>
+    </li>
+    <li>
+        <label for="<?= $this->escapeHtml($_code) ?>_issuer"><?= $this->__('Issuing bank') ?></label>
+        <div class="input-box">
+            <select id="<?= $this->escapeHtml($_code) ?>_issuer" name="payment[mp_issuer_id]">
+                <option value=""><?= $this->__('Issuing bank') ?></option>
+            </select>
+        </div>
+    </li>
+    <li>
+        <label for="<?= $this->escapeHtml($_code) ?>_installments" class="required"><?= $this->__('Installments') ?></label>
+        <div class="input-box">
+            <select id="<?= $this->escapeHtml($_code) ?>_installments" name="payment[mp_installments]" class="required-entry">
+                <option value=""><?= $this->__('Select installments') ?></option>
+            </select>
+        </div>
+    </li>
+    <li>
+        <input type="hidden" id="<?= $this->escapeHtml($_code) ?>_token" name="payment[mp_token]" value="">
+        <input type="hidden" id="<?= $this->escapeHtml($_code) ?>_payment_method_id" name="payment[mp_payment_method_id]" value="">
+    </li>
+</ul>

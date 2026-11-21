@@ -1,0 +1,55 @@
+<?php
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ *
+ * @var IsraelGuido_MercadoPago_Block_Info $this
+ */
+$_orderId = $this->getAdditional('mp_order_id');
+$_paymentId = $this->getAdditional('mp_payment_id');
+$_status = $this->getAdditional('mp_status');
+$_statusDetail = $this->getAdditional('mp_status_detail');
+$_installments = $this->getAdditional('mp_installments');
+?>
+<p><?= $this->escapeHtml($this->getMethod()->getTitle()) ?></p>
+<table class="form-list">
+    <?php if ($_orderId !== ''): ?>
+        <tr>
+            <td class="label"><?= $this->__('Mercado Pago order ID') ?></td>
+            <td><?= $this->escapeHtml($_orderId) ?></td>
+        </tr>
+    <?php endif ?>
+    <?php if ($_paymentId !== ''): ?>
+        <tr>
+            <td class="label"><?= $this->__('Mercado Pago payment ID') ?></td>
+            <td><?= $this->escapeHtml($_paymentId) ?></td>
+        </tr>
+    <?php endif ?>
+    <?php if ($_status !== ''): ?>
+        <tr>
+            <td class="label"><?= $this->__('Status') ?></td>
+            <td><?= $this->escapeHtml($_status) ?></td>
+        </tr>
+    <?php endif ?>
+    <?php if ($_statusDetail !== ''): ?>
+        <tr>
+            <td class="label"><?= $this->__('Status detail') ?></td>
+            <td><?= $this->escapeHtml($_statusDetail) ?></td>
+        </tr>
+    <?php endif ?>
+    <?php if ($_installments !== ''): ?>
+        <tr>
+            <td class="label"><?= $this->__('Installments') ?></td>
+            <td><?= $this->escapeHtml($_installments) ?></td>
+        </tr>
+    <?php endif ?>
+</table>
+<?php if ($_specificInfo = $this->getSpecificInformation()): ?>
+    <dl class="payment-info">
+        <?php foreach ($_specificInfo as $_label => $_value): ?>
+            <dt><?= $this->escapeHtml($_label) ?></dt>
+            <dd><?= nl2br(implode("\n", $this->getValueAsArray($_value, true))) ?></dd>
+        <?php endforeach ?>
+    </dl>
+<?php endif ?>
+<?= $this->getChildHtml() ?>

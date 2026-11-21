@@ -1,0 +1,75 @@
+<?php
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ *
+ * @var Mage_Core_Block_Template $this
+ */
+$_incrementId = Mage::getSingleton('checkout/session')->getLastRealOrderId();
+if (!$_incrementId) {
+    return;
+}
+$_order = Mage::getModel('sales/order')->loadByIncrementId($_incrementId);
+if (!$_order->getId()) {
+    return;
+}
+$_payment = $_order->getPayment();
+$_code = (string) $_payment->getMethod();
+if (!in_array($_code, ['israelguido_mercadopago_pix', 'israelguido_mercadopago_boleto'], true)) {
+    return;
+}
+
+$_qrCode = (string) $_payment->getAdditionalInformation('mp_qr_code');
+$_qrBase64 = (string) $_payment->getAdditionalInformation('mp_qr_code_base64');
+$_ticketUrl = (string) $_payment->getAdditionalInformation('mp_ticket_url');
+$_digitableLine = (string) $_payment->getAdditionalInformation('mp_digitable_line');
+$_qrSrc = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64($_qrBase64);
+?>
+<div class="israelguido-mercadopago-success">
+    <?php if ($_code === 'israelguido_mercadopago_pix'): ?>
+        <h2><?= $this->__('Pay with Pix') ?></h2>
+        <p><?= $this->__('Scan the Pix QR code with your bank app.') ?></p>
+        <?php if ($_qrSrc !== ''): ?>
+            <p>
+                <img src="<?= $this->escapeHtml($_qrSrc) ?>"
+                     alt="<?= $this->quoteEscape($this->__('Pay with Pix')) ?>"
+                     width="240" height="240">
+            </p>
+        <?php endif ?>
+        <?php if ($_qrCode !== ''): ?>
+            <p>
+                <label for="mp_qr_code"><?= $this->__('Pix copy-and-paste code') ?></label>
+                <textarea id="mp_qr_code" readonly="readonly" rows="3" cols="48"><?= $this->escapeHtml($_qrCode) ?></textarea>
+                <button type="button"
+                        class="button"
+                        data-mp-copy="<?= $this->escapeHtml($_qrCode) ?>"
+                        data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
+                    <?= $this->__('Copy Pix code') ?>
+                </button>
+            </p>
+        <?php endif ?>
+    <?php endif ?>
+
+    <?php if ($_code === 'israelguido_mercadopago_boleto'): ?>
+        <h2><?= $this->__('Bank slip') ?></h2>
+        <?php if ($_ticketUrl !== ''): ?>
+            <p>
+                <a class="button" href="<?= $this->escapeUrl($_ticketUrl) ?>" target="_blank" rel="noopener noreferrer">
+                    <?= $this->__('Open boleto') ?>
+                </a>
+            </p>
+        <?php endif ?>
+        <?php if ($_digitableLine !== ''): ?>
+            <p>
+                <label for="mp_digitable_line"><?= $this->__('Boleto digitable line') ?></label>
+                <input id="mp_digitable_line" type="text" readonly="readonly" value="<?= $this->escapeHtml($_digitableLine) ?>">
+                <button type="button"
+                        class="button"
+                        data-mp-copy="<?= $this->escapeHtml($_digitableLine) ?>"
+                        data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
+                    <?= $this->__('Copy boleto line') ?>
+                </button>
+            </p>
+        <?php endif ?>
+    <?php endif ?>
+</div>

@@ -1,0 +1,33 @@
+<?php
+/**
+ * SPDX-FileCopyrightText: 2026 Israel Guido
+ * SPDX-License-Identifier: OSL-3.0
+ *
+ * @var IsraelGuido_MercadoPago_Block_Form_Boleto $this
+ */
+$_code = $this->getMethodCode();
+$_taxvat = $this->getCustomerTaxvat();
+$_docType = $this->getDocumentType();
+?>
+<ul class="form-list israelguido-mercadopago-form" id="payment_form_<?= $this->escapeHtml($_code) ?>" style="display:none;">
+    <li>
+        <p><?= $this->__('Bank slip') ?></p>
+        <p><?= $this->__('The boleto will be shown after you place the order.') ?></p>
+    </li>
+    <li>
+        <label for="<?= $this->escapeHtml($_code) ?>_doc_number" class="required"><?= $this->__('CPF/CNPJ') ?></label>
+        <div class="input-box">
+            <input type="text"
+                   id="<?= $this->escapeHtml($_code) ?>_doc_number"
+                   name="payment[mp_doc_number]"
+                   value="<?= $this->escapeHtml($_taxvat) ?>"
+                   title="<?= $this->quoteEscape($this->__('CPF/CNPJ')) ?>"
+                   class="input-text required-entry"
+                   autocomplete="off">
+            <input type="hidden"
+                   id="<?= $this->escapeHtml($_code) ?>_doc_type"
+                   name="payment[mp_doc_type]"
+                   value="<?= $this->escapeHtml($_docType) ?>">
+        </div>
+    </li>
+</ul>

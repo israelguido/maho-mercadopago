@@ -6,17 +6,17 @@ SPDX-License-Identifier: OSL-3.0
 <layout version="0.1.0">
     <checkout_onepage_index>
         <reference name="head">
-            <action method="addJs"><script>israelguido/mercadopago/checkout.js</script></action>
+            <block type="israelguido_mercadopago/head" name="israelguido.mercadopago.checkout.js" template="israelguido/mercadopago/checkout-js.phtml"/>
         </reference>
     </checkout_onepage_index>
     <checkout_onepage_index_onestep>
         <reference name="head">
-            <action method="addJs"><script>israelguido/mercadopago/checkout.js</script></action>
+            <block type="israelguido_mercadopago/head" name="israelguido.mercadopago.checkout.js" template="israelguido/mercadopago/checkout-js.phtml"/>
         </reference>
     </checkout_onepage_index_onestep>
     <checkout_onepage_success>
         <reference name="head">
-            <action method="addJs"><script>israelguido/mercadopago/checkout.js</script></action>
+            <block type="israelguido_mercadopago/head" name="israelguido.mercadopago.checkout.js" template="israelguido/mercadopago/checkout-js.phtml"/>
         </reference>
         <reference name="content">
             <block type="core/template" name="israelguido.mercadopago.success" template="israelguido/mercadopago/success.phtml" after="-"/>
@@ -24,7 +24,7 @@ SPDX-License-Identifier: OSL-3.0
     </checkout_onepage_success>
     <sales_order_view>
         <reference name="head">
-            <action method="addJs"><script>israelguido/mercadopago/checkout.js</script></action>
+            <block type="israelguido_mercadopago/head" name="israelguido.mercadopago.checkout.js" template="israelguido/mercadopago/checkout-js.phtml"/>
         </reference>
     </sales_order_view>
 </layout>

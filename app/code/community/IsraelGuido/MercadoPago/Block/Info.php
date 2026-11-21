@@ -17,10 +17,7 @@ class IsraelGuido_MercadoPago_Block_Info extends Mage_Payment_Block_Info
     #[\Override]
     protected function _prepareLayout()
     {
-        $head = $this->getLayout()->getBlock('head');
-        if ($head instanceof Mage_Page_Block_Html_Head) {
-            $head->addJs('israelguido/mercadopago/checkout.js');
-        }
+        Mage::helper('israelguido_mercadopago')->attachCheckoutScriptToHead();
         return parent::_prepareLayout();
     }
 

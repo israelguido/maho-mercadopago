@@ -25,19 +25,46 @@ $_ticketUrl = (string) $_payment->getAdditionalInformation('mp_ticket_url');
 $_digitableLine = (string) $_payment->getAdditionalInformation('mp_digitable_line');
 $_qrSrc = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64($_qrBase64);
 ?>
+<style>
+.israelguido-mercadopago-success { text-align: center; }
+.israelguido-mercadopago-success .israelguido-mp-qr {
+    display: inline-block;
+    padding: 12px;
+    background: #fff;
+    line-height: 0;
+}
+.israelguido-mercadopago-success .israelguido-mp-copy {
+    max-width: 480px;
+    margin-inline: auto;
+}
+.israelguido-mercadopago-success .israelguido-mp-copy textarea,
+.israelguido-mercadopago-success .israelguido-mp-copy input {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+.israelguido-mercadopago-success .israelguido-mp-copy .button {
+    display: inline-block;
+    margin-top: 0.75em;
+}
+</style>
 <div class="israelguido-mercadopago-success">
     <?php if ($_code === 'israelguido_mercadopago_pix'): ?>
         <h2><?= $this->__('Pay with Pix') ?></h2>
         <p><?= $this->__('Scan the Pix QR code with your bank app.') ?></p>
         <?php if ($_qrSrc !== ''): ?>
             <p>
-                <img src="<?= $this->escapeHtml($_qrSrc) ?>"
-                     alt="<?= $this->quoteEscape($this->__('Pay with Pix')) ?>"
-                     width="240" height="240">
+                <span class="israelguido-mp-qr">
+                    <img src="<?= $this->escapeHtml($_qrSrc) ?>"
+                         alt="<?= $this->quoteEscape($this->__('Pay with Pix')) ?>"
+                         width="240" height="240">
+                </span>
             </p>
         <?php endif ?>
         <?php if ($_qrCode !== ''): ?>
-            <p>
+            <div class="israelguido-mp-copy">
                 <label for="mp_qr_code"><?= $this->__('Pix copy-and-paste code') ?></label>
                 <textarea id="mp_qr_code" readonly="readonly" rows="3" cols="48"><?= $this->escapeHtml($_qrCode) ?></textarea>
                 <button type="button"
@@ -46,7 +73,7 @@ $_qrSrc = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64($_qrBase6
                         data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
                     <?= $this->__('Copy Pix code') ?>
                 </button>
-            </p>
+            </div>
         <?php endif ?>
     <?php endif ?>
 
@@ -60,7 +87,7 @@ $_qrSrc = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64($_qrBase6
             </p>
         <?php endif ?>
         <?php if ($_digitableLine !== ''): ?>
-            <p>
+            <div class="israelguido-mp-copy">
                 <label for="mp_digitable_line"><?= $this->__('Boleto digitable line') ?></label>
                 <input id="mp_digitable_line" type="text" readonly="readonly" value="<?= $this->escapeHtml($_digitableLine) ?>">
                 <button type="button"
@@ -69,7 +96,7 @@ $_qrSrc = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64($_qrBase6
                         data-mp-copied="<?= $this->quoteEscape($this->__('Copied')) ?>">
                     <?= $this->__('Copy boleto line') ?>
                 </button>
-            </p>
+            </div>
         <?php endif ?>
     <?php endif ?>
 </div>

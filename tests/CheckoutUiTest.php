@@ -267,3 +267,59 @@ israelguido_mp_checkout_ui_assert(
     && str_contains($abstractMethod, 'mp_doc_number'),
     'assignData precisa gravar mp_doc_number só com dígitos',
 );
+
+$helperSrc = israelguido_mp_checkout_ui_read(
+    $packageRoot . '/app/code/community/IsraelGuido/MercadoPago/Helper/Data.php',
+);
+$headBlock = $packageRoot . '/app/code/community/IsraelGuido/MercadoPago/Block/Head.php';
+$checkoutJsTpl = $packageRoot
+    . '/app/design/frontend/base/default/template/israelguido/mercadopago/checkout-js.phtml';
+
+israelguido_mp_checkout_ui_assert(
+    is_file($headBlock) && is_file($checkoutJsTpl),
+    'Cache busting precisa de Block/Head.php e do template checkout-js.phtml',
+);
+israelguido_mp_checkout_ui_assert(
+    !str_contains($layout, 'addJs')
+    && str_contains($layout, 'israelguido_mercadopago/head')
+    && str_contains($layout, 'israelguido/mercadopago/checkout-js.phtml'),
+    'Layout deve emitir checkout.js versionado via block, não addJs',
+);
+israelguido_mp_checkout_ui_assert(
+    str_contains($helperSrc, "InstalledVersions::getReference('israelguido/maho-mercadopago')")
+    && str_contains($helperSrc, 'getPrettyVersion')
+    && str_contains($helperSrc, 'filemtime'),
+    'Helper precisa versionar o JS com getReference, getPrettyVersion e filemtime',
+);
+
+$headTpl = israelguido_mp_checkout_ui_read($checkoutJsTpl);
+israelguido_mp_checkout_ui_assert(
+    str_contains($headTpl, '<script')
+    && str_contains($headTpl, 'getCheckoutJsUrl'),
+    'Template do script precisa emitir <script src> com a URL versionada',
+);
+
+foreach (['Form/Cc.php', 'Form/Pix.php', 'Form/Boleto.php', 'Info.php'] as $relativeBlock) {
+    $blockSrc = israelguido_mp_checkout_ui_read(
+        $packageRoot . '/app/code/community/IsraelGuido/MercadoPago/Block/' . $relativeBlock,
+    );
+    israelguido_mp_checkout_ui_assert(
+        !str_contains($blockSrc, "addJs('israelguido/mercadopago/checkout.js')"),
+        "{$relativeBlock} não pode registrar checkout.js sem cache bust via addJs",
+    );
+}
+
+$jsUrl = Mage::helper('israelguido_mercadopago')->getCheckoutJsUrl();
+israelguido_mp_checkout_ui_assert(
+    is_string($jsUrl)
+    && (bool) preg_match('#israelguido/mercadopago/checkout\\.js\\?v=[A-Za-z0-9._-]+#', $jsUrl),
+    'getCheckoutJsUrl precisa terminar em checkout.js?v=<versão>',
+);
+
+israelguido_mp_checkout_ui_assert(
+    str_contains($success, 'israelguido-mp-qr')
+    && str_contains($success, 'max-width: 480px')
+    && (bool) preg_match('/background:\\s*#fff/', $success)
+    && str_contains($success, 'margin-inline: auto'),
+    'Success Pix/boleto precisa centralizar QR e copia-e-cola (max 480px) com respiro branco no QR',
+);

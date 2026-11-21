@@ -162,10 +162,11 @@ israelguido_mp_checkout_ui_assert(
 );
 
 israelguido_mp_checkout_ui_assert(
-    str_contains($js, 'saveOrder')
-    && str_contains($js, 'FormData')
-    && str_contains($js, 'payment[mp_token]'),
-    'checkout.js precisa anexar payment[mp_token] ao POST de saveOrder em toda tentativa',
+    str_contains($js, 'ReviewClass.prototype.save')
+    && str_contains($js, "typeof Review === 'function'")
+    && str_contains($js, 'payment[mp_token]')
+    && !str_contains($js, 'window.fetch ='),
+    'checkout.js deve envolver Review.save via ReviewClass e evitar patch global de fetch',
 );
 
 $pngQr = IsraelGuido_MercadoPago_Block_Info::qrCodeImageSrcFromBase64('iVBORw0KGgoAAAANSUhEUg==');

@@ -10,6 +10,7 @@
     let securityCodeElement = null;
     let currentBin = '';
     let mounting = false;
+    let placingOrder = false;
 
     function formRoot() {
         return document.getElementById('payment_form_' + CC_CODE);
@@ -631,8 +632,8 @@
         });
     }
 
-    function appendContractFields(formData) {
-        const root = formRoot();
+    function appendContractFields(formData, method) {
+        const root = document.getElementById('payment_form_' + method);
         if (!root) {
             return;
         }
@@ -646,79 +647,64 @@
                 : field.value;
             formData.set(field.name, value);
         });
-        const method = document.querySelector('input[name="payment[method]"]:checked');
-        if (method) {
-            formData.set('payment[method]', method.value);
-        }
     }
 
-    function isSaveOrderUrl(url) {
-        return /\/checkout\/onepage\/saveOrder(?:\/|$|\?)/.test(String(url || ''));
-    }
-
-    function tokenizeFailedResponse(message) {
-        return new Response(JSON.stringify({
-            success: false,
-            error: true,
-            error_messages: message || 'Não foi possível tokenizar o cartão.',
-        }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    }
-
-    function interceptSaveOrder() {
-        if (window.fetch._mpSaveOrder) {
+    function wrapReviewSave() {
+        const ReviewClass = (typeof Review === 'function') ? Review : (window.review && window.review.constructor);
+        if (!ReviewClass || !ReviewClass.prototype || typeof ReviewClass.prototype.save !== 'function'
+            || ReviewClass.prototype.save._mpTokenize) {
             return;
         }
-        const originalFetch = window.fetch.bind(window);
-        window.fetch = async function mpSaveOrderFetch(input, init) {
-            const url = typeof input === 'string' ? input : (input && input.url) || '';
-            const options = init || {};
-            if (isSaveOrderUrl(url) && isMpMethod(selectedMethod())) {
-                const ok = await beforePlaceOrder();
-                if (!ok) {
-                    const root = selectedMpRoot() || formRoot();
-                    const region = root && root.querySelector('[data-mp-error]');
-                    return tokenizeFailedResponse(region ? region.textContent : '');
-                }
-                if (selectedMethod() === CC_CODE) {
-                    if (options.body instanceof FormData) {
-                        appendContractFields(options.body);
-                    } else if (typeof options.body === 'string') {
-                        const params = new URLSearchParams(options.body);
-                        const formData = new FormData();
-                        params.forEach((value, key) => formData.set(key, value));
-                        appendContractFields(formData);
-                        options.body = new URLSearchParams(formData).toString();
-                    }
-                }
+        const original = ReviewClass.prototype.save;
+        const wrapped = async function mpReviewSave(...args) {
+            const method = selectedMethod();
+            if (!isMpMethod(method)) {
+                return original.apply(this, args);
             }
-            return originalFetch(input, options);
-        };
-        window.fetch._mpSaveOrder = true;
-    }
 
-    function wrapAsync(objectName, methodName) {
-        const obj = window[objectName];
-        if (!obj || typeof obj[methodName] !== 'function' || obj[methodName]._mpTokenize) {
-            return;
-        }
-        const original = obj[methodName].bind(obj);
-        const wrapped = async function mpTokenizeThenSave(...args) {
-            const ok = await beforePlaceOrder();
-            if (!ok) {
+            if (placingOrder || checkout.loadWaiting !== false) {
                 return;
             }
-            enableContractFields();
-            return original(...args);
+            placingOrder = true;
+            checkout.setLoadWaiting('review');
+            try {
+                const ok = await beforePlaceOrder(method);
+                if (!ok || selectedMethod() !== method) {
+                    return;
+                }
+                const form = document.getElementById(payment.form);
+                const formData = new FormData(form);
+                appendContractFields(formData, method);
+                const hiddenInputs = [];
+                for (const [name, value] of formData.entries()) {
+                    if (!name.startsWith('payment[mp_')) {
+                        continue;
+                    }
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = String(value);
+                    form.appendChild(input);
+                    hiddenInputs.push(input);
+                }
+                try {
+                    checkout.setLoadWaiting(false);
+                    return await original.apply(this, args);
+                } finally {
+                    hiddenInputs.forEach((input) => input.remove());
+                }
+            } finally {
+                placingOrder = false;
+                if (checkout.loadWaiting !== false) {
+                    checkout.setLoadWaiting(false);
+                }
+            }
         };
         wrapped._mpTokenize = true;
-        obj[methodName] = wrapped;
+        ReviewClass.prototype.save = wrapped;
     }
 
-    async function beforePlaceOrder() {
-        const method = selectedMethod();
+    async function beforePlaceOrder(method) {
         if (!isMpMethod(method)) {
             return true;
         }
@@ -737,13 +723,10 @@
     }
 
     function keepCheckoutHooks() {
-        interceptSaveOrder();
+        wrapReviewSave();
         registerDocumentValidation();
         const button = document.querySelector('#onestepcheckout-place-order, button.btn-checkout, #checkout-review-submit button, #review-buttons-container button');
         if (button && !button._mpTokenizeClick) {
-            button.addEventListener('click', () => {
-                interceptSaveOrder();
-            }, true);
             button._mpTokenizeClick = true;
         }
     }

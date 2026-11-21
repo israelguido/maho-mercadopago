@@ -215,6 +215,7 @@ $csvKeys = [
     'Card Verification Number',
     'Installments',
     'CPF/CNPJ',
+    'CPF/CNPJ must have 11 or 14 digits.',
     'Copy Pix code',
     'Copy boleto line',
     'Pay with Pix',
@@ -226,3 +227,42 @@ foreach ($csvKeys as $key) {
         "CSV pt_BR precisa traduzir: {$key}",
     );
 }
+
+foreach ([$ccForm, $pixForm, $boletoForm] as $formHtml) {
+    israelguido_mp_checkout_ui_assert(
+        str_contains($formHtml, 'inputmode="numeric"')
+        && str_contains($formHtml, 'maxlength="18"'),
+        'Campo CPF/CNPJ precisa de inputmode numeric e maxlength 18',
+    );
+    israelguido_mp_checkout_ui_assert(
+        str_contains($formHtml, 'data-mp-doc-length-error'),
+        'Formulário precisa da mensagem de tamanho do CPF/CNPJ',
+    );
+}
+
+israelguido_mp_checkout_ui_assert(
+    !preg_match('/\\.israelguido-mp-secure[^{]*\\{[^}]*background:\\s*#fff/', $ccForm)
+    && !str_contains($ccForm, 'border: 1px solid #ccc')
+    && !str_contains($ccForm, 'min-height: 48px'),
+    'Host dos secure fields não pode ter altura/fundo/borda fixos no phtml',
+);
+
+israelguido_mp_checkout_ui_assert(
+    str_contains($js, 'billing:vat_id')
+    && str_contains($js, 'billing:taxvat')
+    && str_contains($js, 'formatCpfCnpj')
+    && str_contains($js, 'mpDocEdited')
+    && str_contains($js, 'getComputedStyle')
+    && str_contains($js, 'placeholderColor')
+    && str_contains($js, 'fontFamily'),
+    'checkout.js precisa copiar CPF do billing, mascarar e estilizar secure fields pelo input nativo',
+);
+
+$abstractMethod = israelguido_mp_checkout_ui_read(
+    $packageRoot . '/app/code/community/IsraelGuido/MercadoPago/Model/Method/Abstract.php',
+);
+israelguido_mp_checkout_ui_assert(
+    str_contains($abstractMethod, "preg_replace('/\\D+/', '', (string) \$value)")
+    && str_contains($abstractMethod, 'mp_doc_number'),
+    'assignData precisa gravar mp_doc_number só com dígitos',
+);

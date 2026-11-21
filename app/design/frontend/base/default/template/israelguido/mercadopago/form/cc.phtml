@@ -13,9 +13,9 @@ $_publicKey = $this->getPublicKey();
 <style>
     .israelguido-mp-secure {
         position: relative;
-        min-height: 48px;
-        border: 1px solid #ccc;
-        background: #fff;
+        overflow: hidden;
+        box-sizing: border-box;
+        width: 100%;
     }
     .israelguido-mp-secure iframe {
         display: block;
@@ -43,6 +43,7 @@ $_publicKey = $this->getPublicKey();
     data-mp-missing-key="<?= $this->quoteEscape($this->__('Public key is not configured.')) ?>"
     data-mp-fields-error="<?= $this->quoteEscape($this->__('Mercado Pago could not load secure fields.')) ?>"
     data-mp-required-error="<?= $this->quoteEscape($this->__('Fill in the cardholder name and document.')) ?>"
+    data-mp-doc-length-error="<?= $this->quoteEscape($this->__('CPF/CNPJ must have 11 or 14 digits.')) ?>"
     data-mp-token-error="<?= $this->quoteEscape($this->__('The card could not be tokenized. Check the data and try again.')) ?>">
     <li data-mp-error class="israelguido-mp-error" role="alert" hidden></li>
     <?php if ($_publicKey === ''): ?>
@@ -94,7 +95,9 @@ $_publicKey = $this->getPublicKey();
                    name="payment[mp_doc_number]"
                    value="<?= $this->escapeHtml($_taxvat) ?>"
                    title="<?= $this->quoteEscape($this->__('CPF/CNPJ')) ?>"
-                   class="input-text required-entry"
+                   class="input-text required-entry validate-mp-doc"
+                   inputmode="numeric"
+                   maxlength="18"
                    autocomplete="off">
             <select id="<?= $this->escapeHtml($_code) ?>_doc_type"
                     name="payment[mp_doc_type]"

@@ -32,7 +32,11 @@ abstract class IsraelGuido_MercadoPago_Model_Method_Abstract extends Mage_Paymen
         $payment = $this->getInfoInstance();
         foreach (['mp_token', 'mp_payment_method_id', 'mp_issuer_id', 'mp_installments', 'mp_doc_type', 'mp_doc_number'] as $field) {
             if ($data->hasData($field)) {
-                $payment->setAdditionalInformation($field, $data->getData($field));
+                $value = $data->getData($field);
+                if ($field === 'mp_doc_number') {
+                    $value = preg_replace('/\D+/', '', (string) $value);
+                }
+                $payment->setAdditionalInformation($field, $value);
             }
         }
         return $this;

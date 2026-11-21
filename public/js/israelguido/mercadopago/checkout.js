@@ -281,14 +281,18 @@
             }
             unmountFields();
             mp = new window.MercadoPago(publicKey);
+            const fieldStyle = applySecureHostAppearance(root);
             cardNumberElement = mp.fields.create('cardNumber', {
                 placeholder: root.dataset.mpPlaceholderNumber || '',
+                style: fieldStyle,
             }).mount(hostId(root, 'cardNumber'));
             expirationDateElement = mp.fields.create('expirationDate', {
                 placeholder: root.dataset.mpPlaceholderExp || 'MM/YY',
+                style: fieldStyle,
             }).mount(hostId(root, 'expirationDate'));
             securityCodeElement = mp.fields.create('securityCode', {
                 placeholder: root.dataset.mpPlaceholderCvv || '',
+                style: fieldStyle,
             }).mount(hostId(root, 'securityCode'));
             cardNumberElement.on('binChange', onBinChange);
             await loadIdentificationTypes(root);
@@ -305,22 +309,276 @@
         return String(value || '').replace(/\D+/g, '');
     }
 
-    function inferDocumentType(root) {
+    function formatCpfCnpj(value) {
+        const digits = digitsOnly(value).slice(0, 14);
+        if (!digits) {
+            return '';
+        }
+        if (digits.length <= 11) {
+            let formatted = digits.slice(0, 3);
+            if (digits.length > 3) {
+                formatted += '.' + digits.slice(3, 6);
+            }
+            if (digits.length > 6) {
+                formatted += '.' + digits.slice(6, 9);
+            }
+            if (digits.length > 9) {
+                formatted += '-' + digits.slice(9, 11);
+            }
+            return formatted;
+        }
+        let formatted = digits.slice(0, 2);
+        if (digits.length > 2) {
+            formatted += '.' + digits.slice(2, 5);
+        }
+        if (digits.length > 5) {
+            formatted += '.' + digits.slice(5, 8);
+        }
+        if (digits.length > 8) {
+            formatted += '/' + digits.slice(8, 12);
+        }
+        if (digits.length > 12) {
+            formatted += '-' + digits.slice(12, 14);
+        }
+        return formatted;
+    }
+
+    function isDocumentSourceField(field) {
+        if (!field) {
+            return false;
+        }
+        const id = field.id || '';
+        const name = field.name || '';
+        return id === 'billing:vat_id'
+            || id === 'billing:taxvat'
+            || id === 'shipping:vat_id'
+            || id === 'shipping:taxvat'
+            || name === 'billing[vat_id]'
+            || name === 'billing[taxvat]'
+            || name === 'shipping[vat_id]'
+            || name === 'shipping[taxvat]';
+    }
+
+    function billingDocumentValue() {
+        const selectors = [
+            '#billing\\:vat_id',
+            '#billing\\:taxvat',
+            '#shipping\\:vat_id',
+            '#shipping\\:taxvat',
+            '[name="billing[vat_id]"]',
+            '[name="billing[taxvat]"]',
+            '[name="shipping[vat_id]"]',
+            '[name="shipping[taxvat]"]',
+        ];
+        for (let i = 0; i < selectors.length; i += 1) {
+            const field = document.querySelector(selectors[i]);
+            if (field && digitsOnly(field.value)) {
+                return field.value;
+            }
+        }
+        return '';
+    }
+
+    function applyDocumentType(root) {
         const number = root.querySelector('[name="payment[mp_doc_number]"]');
         const type = root.querySelector('[name="payment[mp_doc_type]"]');
         if (!number || !type) {
             return;
         }
-        const apply = () => {
-            const digits = digitsOnly(number.value);
-            if (digits.length > 11) {
-                type.value = 'CNPJ';
-            } else if (digits.length > 0) {
-                type.value = 'CPF';
+        const digits = digitsOnly(number.value);
+        if (digits.length > 11) {
+            type.value = 'CNPJ';
+        } else if (digits.length > 0) {
+            type.value = 'CPF';
+        }
+    }
+
+    function bindDocField(input) {
+        if (!input || input.dataset.mpDocBound === '1') {
+            return;
+        }
+        input.dataset.mpDocBound = '1';
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('maxlength', '18');
+        if (input.value) {
+            input.value = formatCpfCnpj(input.value);
+        }
+        input.addEventListener('input', () => {
+            input.dataset.mpDocEdited = '1';
+            const formatted = formatCpfCnpj(input.value);
+            if (input.value !== formatted) {
+                input.value = formatted;
+            }
+            const root = input.closest('.israelguido-mercadopago-form');
+            if (root) {
+                applyDocumentType(root);
+            }
+        });
+    }
+
+    function syncDocumentsFromBilling() {
+        const source = billingDocumentValue();
+        if (!digitsOnly(source)) {
+            return;
+        }
+        const formatted = formatCpfCnpj(source);
+        document.querySelectorAll('.israelguido-mercadopago-form [name="payment[mp_doc_number]"]').forEach((input) => {
+            if (input.dataset.mpDocEdited === '1') {
+                return;
+            }
+            if (!input.value || digitsOnly(input.value) !== digitsOnly(source)) {
+                input.value = formatted;
+            } else if (input.value !== formatted) {
+                input.value = formatted;
+            }
+            const root = input.closest('.israelguido-mercadopago-form');
+            if (root) {
+                applyDocumentType(root);
+            }
+        });
+    }
+
+    function bindBillingDocumentSources() {
+        if (document.documentElement.dataset.mpBillingDocBound === '1') {
+            return;
+        }
+        document.documentElement.dataset.mpBillingDocBound = '1';
+        const onSource = (event) => {
+            if (isDocumentSourceField(event.target)) {
+                syncDocumentsFromBilling();
             }
         };
-        number.addEventListener('input', apply);
-        apply();
+        document.addEventListener('input', onSource, true);
+        document.addEventListener('change', onSource, true);
+    }
+
+    function documentLengthError(root) {
+        const number = root.querySelector('[name="payment[mp_doc_number]"]');
+        if (!number) {
+            return '';
+        }
+        const length = digitsOnly(number.value).length;
+        if (length === 11 || length === 14) {
+            return '';
+        }
+        return root.dataset.mpDocLengthError || 'CPF/CNPJ must have 11 or 14 digits.';
+    }
+
+    function validateDocument(root) {
+        const message = documentLengthError(root);
+        if (!message) {
+            return true;
+        }
+        showError(root, message);
+        return false;
+    }
+
+    function isMpMethod(code) {
+        return String(code || '').indexOf('israelguido_mercadopago_') === 0;
+    }
+
+    function selectedMpRoot() {
+        return document.getElementById('payment_form_' + selectedMethod());
+    }
+
+    function sampleNativeInput(root) {
+        return (root && root.querySelector('[data-mp-field="cardholderName"]'))
+            || document.querySelector('.israelguido-mercadopago-form input.input-text')
+            || document.querySelector('#co-billing-form input.input-text')
+            || document.querySelector('input.input-text');
+    }
+
+    function cssColorForSdk(value) {
+        const raw = String(value || '').trim();
+        if (!raw) {
+            return '';
+        }
+        if (/^#([0-9a-f]{3,8})$/i.test(raw) || /^rgba?\(/i.test(raw) || /^hsla?\(/i.test(raw)) {
+            return raw;
+        }
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return '';
+            }
+            ctx.fillStyle = '#000000';
+            ctx.fillStyle = raw;
+            return ctx.fillStyle || '';
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function applySecureHostAppearance(root) {
+        const sample = sampleNativeInput(root);
+        const style = {
+            height: '100%',
+        };
+        if (!sample) {
+            return style;
+        }
+        const computed = window.getComputedStyle(sample);
+        let placeholderColor = computed.color;
+        try {
+            const placeholder = window.getComputedStyle(sample, '::placeholder');
+            if (placeholder && placeholder.color) {
+                placeholderColor = placeholder.color;
+            }
+        } catch (error) {
+            // ignore
+        }
+        if (computed.fontSize) {
+            style.fontSize = computed.fontSize;
+        }
+        const textColor = cssColorForSdk(computed.color);
+        if (textColor) {
+            style.color = textColor;
+        }
+        if (computed.fontFamily) {
+            style.fontFamily = computed.fontFamily;
+        }
+        const sdkPlaceholder = cssColorForSdk(placeholderColor);
+        if (sdkPlaceholder) {
+            style.placeholderColor = sdkPlaceholder;
+        }
+        if (computed.padding && computed.padding !== '0px') {
+            style.padding = computed.padding;
+        }
+        root.querySelectorAll('[data-mp-secure-field]').forEach((host) => {
+            host.style.boxSizing = computed.boxSizing || 'border-box';
+            host.style.height = computed.height;
+            host.style.minHeight = computed.height;
+            host.style.maxHeight = computed.height;
+            host.style.padding = '0';
+            host.style.borderTop = computed.borderTop;
+            host.style.borderRight = computed.borderRight;
+            host.style.borderBottom = computed.borderBottom;
+            host.style.borderLeft = computed.borderLeft;
+            host.style.borderRadius = computed.borderRadius;
+            host.style.backgroundColor = computed.backgroundColor;
+            host.style.color = computed.color;
+            host.style.fontSize = computed.fontSize;
+            host.style.fontFamily = computed.fontFamily;
+            host.style.lineHeight = computed.lineHeight;
+            host.style.width = '100%';
+            host.style.display = 'block';
+            host.style.overflow = 'hidden';
+        });
+        return style;
+    }
+
+    function registerDocumentValidation() {
+        if (!window.Validation || typeof window.Validation.add !== 'function' || window.Validation._mpDoc) {
+            return;
+        }
+        const root = document.querySelector('.israelguido-mercadopago-form');
+        const message = (root && root.dataset.mpDocLengthError) || 'CPF/CNPJ must have 11 or 14 digits.';
+        window.Validation.add('validate-mp-doc', message, function validateMpDoc(value) {
+            const length = digitsOnly(value).length;
+            return length === 11 || length === 14;
+        });
+        window.Validation._mpDoc = true;
     }
 
     async function tokenize() {
@@ -341,6 +599,9 @@
         const docNumber = identificationNumber ? digitsOnly(identificationNumber.value) : '';
         if (!cardholderName || !docNumber) {
             showError(root, root.dataset.mpRequiredError || 'Preencha os dados do cartão e o documento.');
+            return false;
+        }
+        if (!validateDocument(root)) {
             return false;
         }
         try {
@@ -377,9 +638,13 @@
         }
         enableContractFields();
         root.querySelectorAll('[name^="payment[mp_"]').forEach((field) => {
-            if (field.name) {
-                formData.set(field.name, field.value);
+            if (!field.name) {
+                return;
             }
+            const value = field.name === 'payment[mp_doc_number]'
+                ? digitsOnly(field.value)
+                : field.value;
+            formData.set(field.name, value);
         });
         const method = document.querySelector('input[name="payment[method]"]:checked');
         if (method) {
@@ -410,21 +675,23 @@
         window.fetch = async function mpSaveOrderFetch(input, init) {
             const url = typeof input === 'string' ? input : (input && input.url) || '';
             const options = init || {};
-            if (isSaveOrderUrl(url) && selectedMethod() === CC_CODE) {
-                const ok = await tokenize();
+            if (isSaveOrderUrl(url) && isMpMethod(selectedMethod())) {
+                const ok = await beforePlaceOrder();
                 if (!ok) {
-                    const root = formRoot();
+                    const root = selectedMpRoot() || formRoot();
                     const region = root && root.querySelector('[data-mp-error]');
                     return tokenizeFailedResponse(region ? region.textContent : '');
                 }
-                if (options.body instanceof FormData) {
-                    appendContractFields(options.body);
-                } else if (typeof options.body === 'string') {
-                    const params = new URLSearchParams(options.body);
-                    const formData = new FormData();
-                    params.forEach((value, key) => formData.set(key, value));
-                    appendContractFields(formData);
-                    options.body = new URLSearchParams(formData).toString();
+                if (selectedMethod() === CC_CODE) {
+                    if (options.body instanceof FormData) {
+                        appendContractFields(options.body);
+                    } else if (typeof options.body === 'string') {
+                        const params = new URLSearchParams(options.body);
+                        const formData = new FormData();
+                        params.forEach((value, key) => formData.set(key, value));
+                        appendContractFields(formData);
+                        options.body = new URLSearchParams(formData).toString();
+                    }
                 }
             }
             return originalFetch(input, options);
@@ -439,7 +706,7 @@
         }
         const original = obj[methodName].bind(obj);
         const wrapped = async function mpTokenizeThenSave(...args) {
-            const ok = await tokenize();
+            const ok = await beforePlaceOrder();
             if (!ok) {
                 return;
             }
@@ -450,8 +717,28 @@
         obj[methodName] = wrapped;
     }
 
+    async function beforePlaceOrder() {
+        const method = selectedMethod();
+        if (!isMpMethod(method)) {
+            return true;
+        }
+        const root = document.getElementById('payment_form_' + method);
+        if (!root) {
+            return true;
+        }
+        clearError(root);
+        if (!validateDocument(root)) {
+            return false;
+        }
+        if (method === CC_CODE) {
+            return tokenize();
+        }
+        return true;
+    }
+
     function keepCheckoutHooks() {
         interceptSaveOrder();
+        registerDocumentValidation();
         const button = document.querySelector('#onestepcheckout-place-order, button.btn-checkout, #checkout-review-submit button, #review-buttons-container button');
         if (button && !button._mpTokenizeClick) {
             button.addEventListener('click', () => {
@@ -464,6 +751,7 @@
     function bindMethodSwitch() {
         document.addEventListener('payment-method:switched', (event) => {
             const code = event.detail && event.detail.method_code;
+            syncDocumentsFromBilling();
             if (code === CC_CODE) {
                 mountFields();
             }
@@ -479,6 +767,7 @@
             if (!event.target || event.target.name !== 'payment[method]') {
                 return;
             }
+            syncDocumentsFromBilling();
             if (event.target.value === CC_CODE) {
                 mountFields();
             } else {
@@ -514,9 +803,13 @@
     }
 
     function initForms() {
+        bindBillingDocumentSources();
         document.querySelectorAll('.israelguido-mercadopago-form').forEach((root) => {
-            inferDocumentType(root);
+            bindDocField(root.querySelector('[name="payment[mp_doc_number]"]'));
+            applyDocumentType(root);
         });
+        syncDocumentsFromBilling();
+        registerDocumentValidation();
         if (selectedMethod() === CC_CODE) {
             mountFields();
         }

@@ -9,7 +9,14 @@ $_code = $this->getMethodCode();
 $_taxvat = $this->getCustomerTaxvat();
 $_docType = $this->getDocumentType();
 ?>
-<ul class="form-list israelguido-mercadopago-form" id="payment_form_<?= $this->escapeHtml($_code) ?>" style="display:none;">
+<style>
+    .israelguido-mp-error { color: #c00; margin: 0.5em 0; }
+</style>
+<ul class="form-list israelguido-mercadopago-form"
+    id="payment_form_<?= $this->escapeHtml($_code) ?>"
+    style="display:none;"
+    data-mp-doc-length-error="<?= $this->quoteEscape($this->__('CPF/CNPJ must have 11 or 14 digits.')) ?>">
+    <li data-mp-error class="israelguido-mp-error" role="alert" hidden></li>
     <li>
         <p><?= $this->__('Bank slip') ?></p>
         <p><?= $this->__('The boleto will be shown after you place the order.') ?></p>
@@ -22,7 +29,9 @@ $_docType = $this->getDocumentType();
                    name="payment[mp_doc_number]"
                    value="<?= $this->escapeHtml($_taxvat) ?>"
                    title="<?= $this->quoteEscape($this->__('CPF/CNPJ')) ?>"
-                   class="input-text required-entry"
+                   class="input-text required-entry validate-mp-doc"
+                   inputmode="numeric"
+                   maxlength="18"
                    autocomplete="off">
             <input type="hidden"
                    id="<?= $this->escapeHtml($_code) ?>_doc_type"

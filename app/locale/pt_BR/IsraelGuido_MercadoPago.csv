@@ -14,6 +14,7 @@
 "Public key is not configured.","A Public Key do Mercado Pago não está configurada."
 "Mercado Pago could not load secure fields.","Não foi possível carregar os campos seguros do Mercado Pago."
 "Fill in the cardholder name and document.","Preencha o nome no cartão e o CPF/CNPJ."
+"CPF/CNPJ must have 11 or 14 digits.","O CPF deve ter 11 dígitos ou o CNPJ 14."
 "The card could not be tokenized. Check the data and try again.","Não foi possível tokenizar o cartão. Confira os dados e tente novamente."
 "Scan the Pix QR code with your bank app.","Escaneie o QR Code Pix no aplicativo do seu banco."
 "Pix copy-and-paste code","Pix copia e cola"

@@ -13,6 +13,18 @@ class IsraelGuido_MercadoPago_Model_Method_Cc extends IsraelGuido_MercadoPago_Mo
     protected $_canCapture = true;
     protected $_canReviewPayment = true;
 
+    public function validate()
+    {
+        parent::validate();
+        $installments = (int) $this->getInfoInstance()->getAdditionalInformation('mp_installments');
+        $max = (int) $this->getConfigData('max_installments');
+        if ($installments < 1 || ($max > 0 && $installments > $max)) {
+            Mage::throwException(Mage::helper('israelguido_mercadopago')->__('Invalid number of installments.'));
+        }
+
+        return $this;
+    }
+
     public function capture(Maho\DataObject $payment, $amount)
     {
         $order = $payment->getOrder();

@@ -200,3 +200,20 @@ $guestBoleto->initialize('authorize', new Maho\DataObject());
 assert($guestBoletoBody['payer']['identification']['number'] === '39053344705');
 assert($guestBoletoPayment->getAdditionalInformation('mp_ticket_url') === 'https://mp.test/boleto');
 
+[, $invalidInstallmentsPayment] = mpTestOrder('israelguido_mercadopago_cc', 'TOKEN-INST');
+$invalidInstallments = new IsraelGuido_MercadoPago_Model_Method_Cc();
+$invalidInstallments->setInfoInstance($invalidInstallmentsPayment);
+$maxInstallments = (int) $invalidInstallments->getConfigData('max_installments');
+$installmentsMessage = Mage::helper('israelguido_mercadopago')->__('Invalid number of installments.');
+foreach ([0, -1, $maxInstallments + 1] as $badInstallments) {
+    $invalidInstallmentsPayment->setAdditionalInformation('mp_installments', $badInstallments);
+    try {
+        $invalidInstallments->validate();
+        assert(false, 'Invalid installments must stop checkout: ' . $badInstallments);
+    } catch (Mage_Core_Exception $e) {
+        assert($e->getMessage() === $installmentsMessage);
+    }
+}
+$invalidInstallmentsPayment->setAdditionalInformation('mp_installments', 1);
+assert($invalidInstallments->validate() === $invalidInstallments);
+
